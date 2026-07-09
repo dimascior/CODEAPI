@@ -1,0 +1,20 @@
+node_modules/
+# Track a curated set of repo-level VS Code developer config; ignore local noise.
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+__pycache__/
+*.pyc
+build/
+dist/
+bin/
+.env
+*.log
+logs/
+*.vsix
+test-output.txt
+components.js
+components.jsx
+package.json.d.ts

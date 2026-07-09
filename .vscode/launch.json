@@ -1,0 +1,57 @@
+{
+  // CODEAPI debug/launch configs (repo-safe, no machine-specific paths).
+  "version": "0.2.0",
+  "configurations": [
+    {
+      // Launch an Extension Development Host loading THIS repo. package.json "main"
+      // (extension-adapter/extension.js) activates on startup and spawns the packaged
+      // Python runtime. Build it first: run the "build runtime" task so
+      // bin/codeapi-runtime/codeapi-runtime.exe exists (packaged mode). If it is
+      // absent the adapter falls back to `python -m codeapi_vscode.runtime` (dev mode).
+      "name": "Run Extension (CODEAPI adapter)",
+      "type": "extensionHost",
+      "request": "launch",
+      "args": ["--extensionDevelopmentPath=${workspaceFolder}"],
+      "outFiles": ["${workspaceFolder}/extension-adapter/**/*.js"]
+    },
+    {
+      // Run the Python runtime standalone (no VS Code adapter). Pure routes (/health,
+      // /session, dynamic, mesh) answer; adapter-backed /vscode/* and /term/* return 503.
+      // Useful for debugging server/router/session logic in isolation.
+      "name": "Python: CODEAPI runtime (standalone)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "codeapi_vscode.runtime",
+      "args": ["--host", "127.0.0.1", "--port", "47355"],
+      "cwd": "${workspaceFolder}/python",
+      "console": "integratedTerminal",
+      "justMyCode": false
+    },
+    {
+      // Debug the CLI against a live runtime. Edit "args" for the command you are
+      // chasing (same surface as the `codeapi` shim / `python -m codeapi_vscode.cli`),
+      // e.g. ["-p", "47337", "-j", "exec", "return 1+1"] or ["term", "list"].
+      "name": "Python: CODEAPI CLI (edit args)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "codeapi_vscode.cli",
+      "args": ["sessions"],
+      "cwd": "${workspaceFolder}/python",
+      "console": "integratedTerminal",
+      "justMyCode": false
+    },
+    {
+      // Open any python/tests/test_*.py and F5 it. PYTHONPATH makes codeapi_vscode
+      // importable from the repo root; offline suites run as-is, live suites need
+      // "--port <n>" added via "args" here or the task variants instead.
+      "name": "Python: debug current test file",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${file}",
+      "cwd": "${workspaceFolder}",
+      "env": { "PYTHONPATH": "${workspaceFolder}/python" },
+      "console": "integratedTerminal",
+      "justMyCode": false
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "name": "codeapi-adapter",
+  "displayName": "CODEAPI Adapter",
+  "description": "Minimal JS bootstrap that launches and supervises the Python CODEAPI runtime and bridges irreducible vscode.* operations. DESIGN SKELETON — not the active extension until the Phase-14 cutover.",
+  "version": "0.0.0",
+  "engines": { "vscode": "^1.102.0" },
+  "categories": ["Other"],
+  "activationEvents": ["onStartupFinished"],
+  "//": "This is the adapter's OWN manifest. The root package.json main still points at ./dist/extension.js; pointing it here is a Phase-14 item (see docs/PYTHON_RUNTIME_BOOTSTRAP.md).",
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      { "command": "codeapi.restartRuntime", "title": "CODEAPI: Restart Python Runtime" },
+      { "command": "codeapi.showRuntimeLog", "title": "CODEAPI: Show Runtime Output" }
+    ],
+    "configuration": {
+      "title": "CODEAPI Adapter",
+      "properties": {
+        "codeapi.pythonServicePortBase": {
+          "type": "number",
+          "default": 47337,
+          "description": "Base port for the Python runtime service (must be OUTSIDE the VS Code window band 3637-3646 until the Phase-14 cutover)."
+        },
+        "codeapi.pythonPath": {
+          "type": "string",
+          "default": "",
+          "description": "Explicit python.exe path for dev mode (avoid .bat shims). Empty = use bundled runtime if present, else python.exe on PATH."
+        }
+      }
+    }
+  },
+  "dependencies": {
+    "//": "node-pty 1.1.0 (N-API, ABI-stable) — matches the repo root node_modules/node-pty. Required by the /vscode/term/* bridge and the /exec `nodePty`/`codeApiTerm` globals. Pinned exact to the proven-loadable prebuild (Phase 14 prerequisite; dev-load validation is a separate operator step).",
+    "node-pty": "1.1.0"
+  },
+  "license": "UNLICENSED"
+}

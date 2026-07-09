@@ -1,0 +1,61 @@
+{
+  "name": "codeapi",
+  "displayName": "CODEAPI",
+  "description": "Local VS Code automation over HTTP with extension-host execution and controllable PTY terminals.",
+  "publisher": "dimas",
+  "version": "0.1.4",
+  "private": true,
+  "engines": {
+    "vscode": "^1.102.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./extension-adapter/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "codeapi.restartRuntime",
+        "title": "CODEAPI: Restart Python Runtime"
+      },
+      {
+        "command": "codeapi.showRuntimeLog",
+        "title": "CODEAPI: Show Runtime Output"
+      }
+    ],
+    "configuration": {
+      "title": "CODEAPI",
+      "properties": {
+        "codeapi.pythonServicePortBase": {
+          "type": "number",
+          "default": 47337,
+          "description": "Base port for the Python runtime service (must be OUTSIDE the VS Code window band 3637-3646)."
+        },
+        "codeapi.pythonPath": {
+          "type": "string",
+          "default": "",
+          "description": "Explicit python.exe path for dev mode (avoid .bat shims). Empty = use bundled runtime if present, else python.exe on PATH."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "python python/tools/build_runtime.py --run",
+    "vsce:package": "vsce package",
+    "vsce:publish": "vsce publish"
+  },
+  "devDependencies": {
+    "@vscode/vsce": "^3.9.2"
+  },
+  "dependencies": {
+    "node-pty": "^1.1.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dimascior/CODEAPI.git"
+  },
+  "license": "UNLICENSED"
+}

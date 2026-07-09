@@ -1,0 +1,36 @@
+[project]
+name = "codeapi-vscode"
+version = "0.0.0"
+description = "CODEAPI Python service + control plane for driving VS Code over loopback HTTP. Forward replacement for the Node CLI and MCP server."
+# Matches the seed CLI runtime, verified live on CPython 3.8.10 (pyenv).
+requires-python = ">=3.8"
+
+# The Tier-1 control plane (client, terminal_client, cli) is stdlib-only:
+# urllib/json/argparse. Keep it that way.
+#
+# Known exception ahead — the Tier-2 headless PTY subsystem (Phase 13): Python's
+# `pty` module is Unix-only, so a Windows headless PTY needs ConPTY via ctypes
+# (stdlib-adjacent but nontrivial) OR a dependency such as `pywinpty`. That choice
+# is deferred to Phase 13; if a dep is taken it goes in an extra, not the core.
+# Any dependency added for the Tier-2 HTTP server (Phase 11) must be declared here
+# with a one-line justification. MCP is NOT a dependency of this package.
+dependencies = []
+
+[project.optional-dependencies]
+# Test tooling only. The runtime stays dependency-free unless Phase 11 decides
+# otherwise.
+test = ["pytest>=7.0"]
+
+[project.scripts]
+# Phase 10 wires this to codeapi_vscode.cli:main (replacing the Node `codeapi`).
+codeapi = "codeapi_vscode.cli:main"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.codeapi-vscode]
+# Marker: this package is the forward CODEAPI architecture. See
+# docs/PYTHON_PORT_ROADMAP.md. Phase 9 = skeleton only (no runtime behavior).
+phase = 9
+status = "skeleton"

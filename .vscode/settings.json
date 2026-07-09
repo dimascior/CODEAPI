@@ -1,0 +1,28 @@
+{
+  // CODEAPI developer workspace settings (repo-safe, no machine-specific paths).
+  // Active VS Code extension entrypoint: extension-adapter/extension.js (root
+  // package.json "main"). The adapter launches the packaged Python runtime
+  // bin/codeapi-runtime/codeapi-runtime.exe; the Python service is python/codeapi_vscode/.
+  "files.eol": "\n",
+  "files.trimTrailingWhitespace": true,
+  "search.exclude": {
+    "**/node_modules": true,
+    "bin/codeapi-runtime": true,
+    "python/build": true,
+    "**/__pycache__": true,
+    "**/*.vsix": true
+  },
+  "python.analysis.extraPaths": ["python"],
+  "python.analysis.typeCheckingMode": "basic",
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestEnabled": false,
+  "[python]": {
+    "editor.tabSize": 4
+  },
+  "[javascript]": {
+    "editor.tabSize": 2
+  },
+  "[json]": {
+    "editor.tabSize": 2
+  }
+}
