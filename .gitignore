@@ -1,0 +1,25 @@
+node_modules/
+# Track a curated set of repo-level VS Code developer config; ignore local noise.
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+__pycache__/
+*.pyc
+build/
+dist/
+bin/
+.env
+*.log
+logs/
+*.vsix
+test-output.txt
+# @vscode/test-electron caches its downloaded VS Code build here when the
+# runner's cwd is the repo root — measured at 326 MB after an isolated
+# extension-host run. The harness belongs outside the repository; this keeps
+# an accidental placement out of the working-tree selection.
+.vscode-test/
+components.js
+components.jsx
+package.json.d.ts

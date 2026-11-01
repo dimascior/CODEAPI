@@ -1,0 +1,12 @@
+{
+  "name": "codeapi-adapter",
+  "description": "Internal manifest for the CODEAPI JS adapter (the code behind the ROOT package.json's main). Launches and supervises the Python CODEAPI runtime and bridges irreducible vscode.* operations. Not a standalone extension: contributions, version, and activation live in the root manifest.",
+  "version": "0.0.0",
+  "private": true,
+  "main": "./extension.js",
+  "dependencies": {
+    "//": "node-pty 1.1.0 (N-API, ABI-stable) — matches the repo root node_modules/node-pty. Required by the /vscode/term/* bridge and the /exec `nodePty`/`codeApiTerm` globals. Pinned exact to the proven-loadable prebuild.",
+    "node-pty": "1.1.0"
+  },
+  "license": "UNLICENSED"
+}

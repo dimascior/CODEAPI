@@ -1,0 +1,169 @@
+{
+  // CODEAPI developer tasks. Run via "Tasks: Run Task". All commands are relative
+  // to the workspace root; no machine-specific paths. Python tasks set PYTHONPATH
+  // so python/tests/*.py resolve the codeapi_vscode package.
+  // "test: all offline" is the default test task (Ctrl+Shift+P -> Run Test Task);
+  // it chains every suite that needs NO live VS Code window. Live suites take
+  // --port via prompt (default 47337 = adapter band base).
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "install (npm install)",
+      "type": "shell",
+      "command": "npm install",
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "build runtime (npm run vscode:prepublish)",
+      "type": "shell",
+      "command": "npm run vscode:prepublish",
+      "detail": "PyInstaller build -> bin/codeapi-runtime/codeapi-runtime.exe",
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "package VSIX (npm run vsce:package)",
+      "type": "shell",
+      "command": "npm run vsce:package",
+      "detail": "Runs prepublish then vsce package -> codeapi-<version>.vsix",
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "check: bridge_core.js",
+      "type": "shell",
+      "command": "node --check extension-adapter/bridge_core.js",
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "check: extension.js",
+      "type": "shell",
+      "command": "node --check extension-adapter/extension.js",
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "test: bridge_core (JS)",
+      "type": "shell",
+      "command": "node extension-adapter/tests/test_bridge_core.js",
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "test: python discovery",
+      "type": "shell",
+      "command": "python python/tests/test_discovery.py",
+      "options": { "env": { "PYTHONPATH": "python" } },
+      "detail": "Pure unit test of runtime classification/selection; no VS Code needed.",
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "test: python smoke (offline)",
+      "type": "shell",
+      "command": "python python/tests/test_smoke.py",
+      "options": { "env": { "PYTHONPATH": "python" } },
+      "detail": "Import/compile + --help + sessions checks; live suite skipped without --port.",
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "test: python runtime (pure)",
+      "type": "shell",
+      "command": "python python/tests/test_runtime_pure.py",
+      "options": { "env": { "PYTHONPATH": "python" } },
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "test: python runtime (cli)",
+      "type": "shell",
+      "command": "python python/tests/test_runtime_cli.py",
+      "options": { "env": { "PYTHONPATH": "python" } },
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "test: python adapter client",
+      "type": "shell",
+      "command": "python python/tests/test_adapter_client.py",
+      "options": { "env": { "PYTHONPATH": "python" } },
+      "detail": "Fake loopback bridge; no VS Code needed.",
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "test: python adapter term",
+      "type": "shell",
+      "command": "python python/tests/test_adapter_term.py",
+      "options": { "env": { "PYTHONPATH": "python" } },
+      "detail": "Fake /vscode/term/* bridge; no VS Code needed.",
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "test: python term routes",
+      "type": "shell",
+      "command": "python python/tests/test_term_routes.py",
+      "options": { "env": { "PYTHONPATH": "python" } },
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "test: python vscode routes",
+      "type": "shell",
+      "command": "python python/tests/test_vscode_routes.py",
+      "options": { "env": { "PYTHONPATH": "python" } },
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "test: all offline (JS + Python)",
+      "detail": "Every suite that needs no live VS Code window, run in sequence.",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "check: bridge_core.js",
+        "check: extension.js",
+        "test: bridge_core (JS)",
+        "test: python discovery",
+        "test: python smoke (offline)",
+        "test: python runtime (pure)",
+        "test: python runtime (cli)",
+        "test: python adapter client",
+        "test: python adapter term",
+        "test: python term routes",
+        "test: python vscode routes"
+      ],
+      "group": { "kind": "test", "isDefault": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "test: python smoke (LIVE window)",
+      "type": "shell",
+      "command": "python python/tests/test_smoke.py --port ${input:codeapiPort}",
+      "options": { "env": { "PYTHONPATH": "python" } },
+      "detail": "Full suite against a live window; also drives test_differential with the same port.",
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "test: python differential (LIVE window)",
+      "type": "shell",
+      "command": "python python/tests/test_differential.py --port ${input:codeapiPort}",
+      "options": { "env": { "PYTHONPATH": "python" } },
+      "detail": "Proves each Python wrapper matches raw /exec against the live runtime.",
+      "group": "test",
+      "problemMatcher": []
+    }
+  ],
+  "inputs": [
+    {
+      "id": "codeapiPort",
+      "type": "promptString",
+      "description": "CODEAPI runtime port (adapter band 47337-47400, or legacy 3637-3646)",
+      "default": "47337"
+    }
+  ]
+}

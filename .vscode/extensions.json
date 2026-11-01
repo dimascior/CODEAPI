@@ -1,0 +1,8 @@
+{
+  // Recommended extensions for CODEAPI development. The active runtime is a Python
+  // service launched by a hand-written JS adapter (no TypeScript/esbuild toolchain).
+  "recommendations": [
+    "ms-python.python",
+    "ms-python.vscode-pylance"
+  ]
+}

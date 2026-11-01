@@ -1,0 +1,85 @@
+# ============================================================================
+# CODEAPI VSIX packaging exclusions (terminal-first runtime).
+#
+# The shipped extension is intentionally minimal:
+#   package.json
+#   README.md                      (vsce always includes it)
+#   extension-adapter/extension.js  (the VS Code adapter, package.json.main)
+#   extension-adapter/bridge_core.js
+#   bin/codeapi-runtime/**          (the packaged PyInstaller runtime exe)
+#   node_modules/node-pty/**        (native PTY backend required at runtime)
+#
+# Everything below is source, tests, build artifacts, docs, or other
+# subsystems that the runtime does NOT need. bin/codeapi-runtime/** and
+# extension-adapter/** and node_modules/node-pty/** are NEVER excluded here.
+# ============================================================================
+
+# --- VS Code / git / editor tooling ---
+.vscode/**
+.vscode-test/**
+.github/**
+.git/**
+.gitignore
+.gitattributes
+.editorconfig
+.yarnrc
+.npm/**
+.nyc_output/**
+.DS_Store
+
+# --- command-gate evidence + agent tooling state (never ship) ---
+.command-gate/**
+.claude/**
+
+# --- source / build / test trees not needed at runtime ---
+src/**
+out/**
+cli/**
+test/**
+tests/**
+build/**
+coverage/**
+logs/**
+dist/**
+
+# --- Python service source, tests, and build artifacts ---
+# (the runtime ships compiled as bin/codeapi-runtime/**, not as .py sources)
+python/**
+python/build/**
+python/tests/**
+python/.pytest_cache/**
+
+# --- other subsystems not part of the terminal-first runtime ---
+extension-bridge/**
+scripts/**
+docs/**
+
+# --- TypeScript / esbuild toolchain configs ---
+esbuild.js
+eslint.config.mjs
+vsc-extension-quickstart.md
+tsconfig.json
+**/tsconfig.json
+
+# --- file-type excludes ---
+**/*.map
+**/*.ts
+**/*.log
+**/*.vsix
+**/*.pyc
+**/__pycache__/**
+**/.vscode-test.*
+
+# --- non-runtime root files (docs / spec / standalone-only helper) ---
+AGENTS.md
+openapi.json
+standalone-exec-with-action.js
+
+# --- misc dev scratch ---
+components.js
+components.jsx
+package.json.d.ts
+
+# --- node_modules: exclude everything EXCEPT node-pty (native PTY backend) ---
+node_modules/**
+!node_modules/node-pty/**
