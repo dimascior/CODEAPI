@@ -71,7 +71,7 @@ CODEAPI/
 ├── package.json                     ▶ root manifest; main → extension-adapter/extension.js;
 │                                       scripts: vscode:prepublish (build runtime), vsce:package
 ├── README.md                          this file
-├── LICENSE.md                         proprietary / all-rights-reserved (UNLICENSED, private)
+├── LICENSE.md                         MIT license
 ├── openapi.json                       OpenAPI sketch of the HTTP surface (reference)
 ├── .vscodeignore                      VSIX packaging boundary (what ships in the .vsix)
 ├── .gitignore                         ignores node_modules/, bin/, *.vsix, __pycache__, …
@@ -199,8 +199,7 @@ Two things this tree makes explicit:
 ## Quick start
 
 ```bash
-git clone --branch release/terminal-runtime-cleanup --single-branch \
-    git@github.com:dimascior/CODEAPI.git CODEAPI && cd CODEAPI
+git clone git@github.com:dimascior/CODEAPI.git CODEAPI && cd CODEAPI
 npm install                 # node-pty + @vscode/vsce
 npm run vscode:prepublish   # build bin/codeapi-runtime/codeapi-runtime.exe (PyInstaller)
 npm run vsce:package        # -> codeapi-<version>.vsix
