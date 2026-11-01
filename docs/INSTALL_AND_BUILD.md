@@ -28,8 +28,7 @@ so `python` resolves correctly).
 
 ```bash
 # 1. Clone the branch
-git clone --branch release/terminal-runtime-cleanup --single-branch \
-    git@github.com:dimascior/CODEAPI.git CODEAPI
+git clone git@github.com:dimascior/CODEAPI.git CODEAPI
 cd CODEAPI
 
 # 2. Confirm toolchain

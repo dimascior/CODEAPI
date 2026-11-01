@@ -16,8 +16,7 @@ honored. Companion to [DISCOVERY_AND_TERMINAL_ROUTING.md](DISCOVERY_AND_TERMINAL
   pseudoterminal bridge now forwards `open(initialDimensions)`/`setDimensions()` to
   `pty.resize`, fixing cursor-addressed output rendering off-view/overpainted in the
   visible pane while `/term/read` carried every byte (TERM_CONTRACT §6.1 note).
-- `LICENSE.md` (proprietary, `"license": "UNLICENSED"`) ships in the VSIX; no
-  missing-license warning.
+- `LICENSE.md` (MIT) ships in the VSIX; no missing-license warning.
 - 0.1.5 closes the four pre-release findings: the JS-probe/Python-bind race
   (exact-bind + identity-aware readiness, §5), stale version metadata, the stale
   shipped `extension-adapter/package.json` (now a minimal internal manifest — no

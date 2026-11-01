@@ -65,7 +65,7 @@ Direct consequences on Windows:
   `env: process.env` and inherits the host's user, PATH, and integrity level. If VS
   Code was launched elevated (e.g. an automated launch under the Windows `Admin`
   account), **every CODEAPI shell is elevated too**, with the Admin PATH — not the
-  interactive `dimas` environment. This changes what `git`/`python`/etc. resolve to
+  interactive user's environment. This changes what `git`/`python`/etc. resolve to
   inside the PTY and is a real privilege-escalation surface (see §7).
 
 ---
@@ -215,7 +215,7 @@ Get-NetTCPConnection -State Listen |
   the loopback port as a live local shell.
 - **The terminal's integrity level is inherited from VS Code.** On this host an
   agent-launched VS Code runs under the elevated `Admin` account, so its CODEAPI
-  shells are elevated and use the Admin PATH — *not* the interactive `dimas`
+  shells are elevated and use the Admin PATH — *not* the interactive user's
   environment. A user-launched VS Code yields `dimas`-level shells. Know which one you
   are driving; it changes both privilege and which `git`/`python` you get.
 - **The bridge is the real trust boundary, and it is guarded.** Every `/vscode/*`

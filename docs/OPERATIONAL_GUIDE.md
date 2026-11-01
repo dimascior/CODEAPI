@@ -13,8 +13,7 @@ Prereqs and boundaries: [INSTALL_AND_BUILD.md](INSTALL_AND_BUILD.md). How it wor
 ### 1–2. Install / build / package
 
 ```bash
-git clone --branch release/terminal-runtime-cleanup --single-branch \
-    git@github.com:dimascior/CODEAPI.git CODEAPI && cd CODEAPI
+git clone git@github.com:dimascior/CODEAPI.git CODEAPI && cd CODEAPI
 npm install
 npm run vscode:prepublish     # builds bin/codeapi-runtime/codeapi-runtime.exe
 npm run vsce:package          # -> codeapi-<version>.vsix

@@ -38,7 +38,7 @@ ever ended by external kill. `unresolved` which leg swallowed them.
 ```
 component        pid    parent  port         identity
 Python runtime   25876  41116   127.0.0.1:47337
-                 c:\Users\dimas\.vscode\extensions\dimas.codeapi-0.1.7\
+                 <vscode-extensions>\dimas.codeapi-0.1.7\
                  bin\codeapi-runtime\codeapi-runtime.exe
                  --host 127.0.0.1 --port 47337 --adapter-port 53337
 extension host   41116  6608    127.0.0.1:53337 (bridge), 40418, 53307
