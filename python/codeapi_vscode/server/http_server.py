@@ -39,7 +39,7 @@ class _Handler(BaseHTTPRequestHandler):
         discovery = method == "GET" and self.path.split("?", 1)[0] in ("/health", "/session")
         if token and not discovery:
             supplied = self.headers.get("X-CODEAPI-TOKEN", "")
-            if not secrets.compare_digest(supplied, token):
+            if not secrets.compare_digest(supplied.encode("utf-8"), token.encode("utf-8")):
                 data = b'{"error":"CODEAPI authentication required"}'
                 self.send_response(401)
                 self.send_header("Content-Type", "application/json")
