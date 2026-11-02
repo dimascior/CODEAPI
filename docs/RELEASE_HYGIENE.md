@@ -1,7 +1,13 @@
-# Release Hygiene — CODEAPI VSIX 0.1.6 (current release record)
+# Release Hygiene — historical VSIX 0.1.6 validation (2026-07-10)
 
-The current shipped surface, the validation evidence behind it, and the boundaries
-honored. Companion to [DISCOVERY_AND_TERMINAL_ROUTING.md](DISCOVERY_AND_TERMINAL_ROUTING.md),
+**Current source status (2026-11-02):** The source manifest and root lockfile
+are now synchronized at **0.1.7** with MIT metadata matching LICENSE.md.
+This is not proof of a built, installed or published 0.1.7 VSIX.
+The install and regression observations below are historical for earlier
+versions; macOS/Linux launcher adjustments also require host-native validation.
+
+This document preserves the historical shipped surface, validation evidence,
+and boundaries honored. Companion to [DISCOVERY_AND_TERMINAL_ROUTING.md](DISCOVERY_AND_TERMINAL_ROUTING.md),
 [CODEAPI_RUNTIME_ARCHITECTURE.md](CODEAPI_RUNTIME_ARCHITECTURE.md), and
 [INSTALL_AND_BUILD.md](INSTALL_AND_BUILD.md).
 
@@ -9,9 +15,8 @@ honored. Companion to [DISCOVERY_AND_TERMINAL_ROUTING.md](DISCOVERY_AND_TERMINAL
 
 - Branch `release/terminal-runtime-cleanup`, consolidated history, **pushed** to
   `origin` (github.com/dimascior/CODEAPI).
-- Manifest version **0.1.6** in BOTH `package.json` and `package-lock.json` (root and
-  package entry — the lockfile had lagged at 0.1.3 through two releases; kept in
-  lockstep since 0.1.5); artifact `codeapi-0.1.6.vsix`.
+- At the time of the **2026-07-10** checks both manifests had **0.1.6**;
+  artifact `codeapi-0.1.6.vsix`. Current source metadata is described above.
 - 0.1.6 (delta over 0.1.5): **visible terminals track the pane's dimensions** — the
   pseudoterminal bridge now forwards `open(initialDimensions)`/`setDimensions()` to
   `pty.resize`, fixing cursor-addressed output rendering off-view/overpainted in the

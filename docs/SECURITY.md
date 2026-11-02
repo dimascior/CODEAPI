@@ -12,7 +12,36 @@ The HTTP server is intended to bind only to:
 ```
 
 Do not expose the CODEAPI loopback ports (the Python runtime binds `47337`+) on a
-LAN, public interface, or tunnel without adding authentication and policy controls.
+LAN, public interface, or tunnel. The optional public token alone is not
+sufficient for network exposure; authorization, audit and policy controls would also be needed.
+
+## Opt-in public API authentication
+
+The Python public API is not the token-protected internal `/vscode/*` bridge.
+Public routes on loopback remain unauthenticated **by default** to preserve
+existing trusted-local clients. Loopback prevents direct connections from other
+machines, but does not isolate the service from other local processes or
+automatically protect against browser-origin requests.
+
+Set `CODEAPI_PUBLIC_TOKEN` to a cryptographically random secret **before
+launching VS Code** to require `X-CODEAPI-TOKEN: <secret>` for all public
+routes except `GET /health` and `GET /session` (identity discovery).
+Missing or incorrect credentials return HTTP 401 before dispatch. The bundled
+Python client automatically sends the header when that variable is set.
+
+PowerShell 5.1+ example, using a cryptographically secure random generator:
+
+```powershell
+$bytes = New-Object byte[] 32
+$rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+try { $rng.GetBytes($bytes) } finally { $rng.Dispose() }
+$env:CODEAPI_PUBLIC_TOKEN = [BitConverter]::ToString($bytes).Replace('-', '')
+code .
+```
+
+Supply the same token to authorized clients through their environment; raw
+HTTP callers must add the header. Do not store secrets in source control or
+shared terminal transcripts. This does not replace OS process isolation.
 
 ## Risky Capabilities
 

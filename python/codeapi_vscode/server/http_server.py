@@ -7,6 +7,8 @@ config guard enforces that upstream.
 """
 
 import json
+import os
+import secrets
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 
@@ -31,6 +33,20 @@ class _Handler(BaseHTTPRequestHandler):
     server_version = "codeapi-runtime/0"
 
     def _handle(self, method):
+        # Opt-in public-service authentication, distinct from the mandatory
+        # private bridge token. Keep health/session available for discovery.
+        token = getattr(self.server, "public_token", "")
+        discovery = method == "GET" and self.path.split("?", 1)[0] in ("/health", "/session")
+        if token and not discovery:
+            supplied = self.headers.get("X-CODEAPI-TOKEN", "")
+            if not secrets.compare_digest(supplied, token):
+                data = b'{"error":"CODEAPI authentication required"}'
+                self.send_response(401)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(data)))
+                self.end_headers()
+                self.wfile.write(data)
+                return
         length = int(self.headers.get("Content-Length") or 0)
         body = self.rfile.read(length) if length else b""
         try:
@@ -71,16 +87,19 @@ class _Handler(BaseHTTPRequestHandler):
 class HttpServer:
     """Loopback HTTP server hosting the CODEAPI router."""
 
-    def __init__(self, host="127.0.0.1", port=None, router=None):
+    def __init__(self, host="127.0.0.1", port=None, router=None, public_token=None):
         self.host = host
         self.port = port
         self.router = router
+        self.public_token = (os.environ.get("CODEAPI_PUBLIC_TOKEN", "")
+                             if public_token is None else public_token)
         self._httpd = None
 
     def start(self, poll_interval=0.5):
         """Bind and serve forever (blocks). Loopback only."""
         self._httpd = ThreadingHTTPServer((self.host, self.port), _Handler)
         self._httpd.router = self.router
+        self._httpd.public_token = self.public_token
         self._httpd.serve_forever(poll_interval=poll_interval)
 
     def stop(self):

@@ -32,7 +32,7 @@
         "codeapi.pythonPath": {
           "type": "string",
           "default": "",
-          "description": "Explicit python.exe path for dev mode (avoid .bat shims). Empty = use bundled runtime if present, else python.exe on PATH."
+          "description": "Explicit interpreter for dev mode. Empty = bundled runtime if present, otherwise python.exe on Windows or python3 on macOS/Linux."
         }
       }
     }
@@ -52,5 +52,5 @@
     "type": "git",
     "url": "https://github.com/dimascior/CODEAPI.git"
   },
-  "license": "UNLICENSED"
+  "license": "MIT"
 }

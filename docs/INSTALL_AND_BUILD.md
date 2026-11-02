@@ -41,11 +41,12 @@ npm install
 
 # 4. Build the packaged Python runtime (PyInstaller)
 npm run vscode:prepublish
-#    -> bin/codeapi-runtime/codeapi-runtime.exe  + bin/codeapi-runtime/_internal/
+#    -> bin/codeapi-runtime/codeapi-runtime[.exe] + bin/codeapi-runtime/_internal/
+#       (.exe on Windows, extensionless on macOS/Linux)
 
 # 5. Confirm the runtime built
 #    Windows: dir bin\codeapi-runtime\codeapi-runtime.exe
-#    bash:    test -f bin/codeapi-runtime/codeapi-runtime.exe && echo OK
+#    macOS/Linux: test -x bin/codeapi-runtime/codeapi-runtime && echo OK
 
 # 6. Package the VSIX
 npm run vsce:package
@@ -72,6 +73,12 @@ code --user-data-dir  <temp>/codeapi-ud --extensions-dir <temp>/codeapi-ext \
 code --new-window --user-data-dir <temp>/codeapi-ud --extensions-dir <temp>/codeapi-ext <repo>
 ```
 
+Build on the **target OS and architecture**: PyInstaller does not
+cross-compile, and node-pty uses host-native binaries. The launcher chooses
+the extensionless runtime on POSIX and defaults to python3 in POSIX dev
+mode. Packaged macOS/Linux installation remains **unvalidated**; verify on
+real hosts before describing it as supported.
+
 On startup the adapter activates and launches the packaged runtime from the installed
 extension dir (packaged-mode precedence — see [DEBUGGING.md](DEBUGGING.md)). Then verify:
 
@@ -96,7 +103,7 @@ runtime surface. `.vscodeignore` enforces the boundary.
 - `readme.md` (`README.md`)
 - `LICENSE.md`
 - `extension-adapter/**` (`extension.js`, `bridge_core.js`)
-- `bin/codeapi-runtime/**` (the packaged runtime exe + `_internal/`)
+- `bin/codeapi-runtime/**` (host-native packaged runtime + `_internal/`)
 - `node_modules/node-pty/**` (native PTY backend — the only `node_modules` kept)
 
 ### VSIX excludes (repo-only)

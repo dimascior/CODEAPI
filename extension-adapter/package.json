@@ -8,5 +8,5 @@
     "//": "node-pty 1.1.0 (N-API, ABI-stable) — matches the repo root node_modules/node-pty. Required by the /vscode/term/* bridge and the /exec `nodePty`/`codeApiTerm` globals. Pinned exact to the proven-loadable prebuild.",
     "node-pty": "1.1.0"
   },
-  "license": "UNLICENSED"
+  "license": "MIT"
 }

@@ -9,6 +9,7 @@ legacy-seed/mcp-server/app/vscode_api_client.py.
 """
 
 import json
+import os
 import urllib.error
 import urllib.request
 from typing import List, Optional
@@ -34,6 +35,9 @@ class CodeAPIClient:
         t = timeout if timeout is not None else self.timeout
         data = None
         headers = {}
+        public_token = os.environ.get("CODEAPI_PUBLIC_TOKEN")
+        if public_token:
+            headers["X-CODEAPI-TOKEN"] = public_token
         if body is not None:
             if isinstance(body, str):
                 data = body.encode("utf-8")

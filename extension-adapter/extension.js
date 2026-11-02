@@ -173,7 +173,7 @@ async function launchAttempt(context, pyPort, codeapiWorkspaceId) {
   // unhandled 'error' could bubble). Log it explicitly with the resolved exe + a fix hint.
   child.on('error', (e) => {
     channel.appendLine(`[runtime spawn error: ${errMsg(e)} — exe='${exe}'. Set the `
-      + `"codeapi.pythonPath" setting or CODEAPI_PYTHON to an explicit python.exe.]`);
+      + `"codeapi.pythonPath" setting or CODEAPI_PYTHON to a real Python interpreter.]`);
     vscode.window.showErrorMessage(
       `CODEAPI runtime could not launch Python ('${exe}'): ${errMsg(e)}`);
   });
@@ -847,9 +847,9 @@ function resolveRuntimeCommand(context, pyPort, adapterPort) {
   const commonArgs = ['--host', '127.0.0.1', '--port', String(pyPort),
                       '--adapter-port', String(adapterPort)];
   const fs = require('fs');
-  // Packaged mode (Phase 14): self-contained exe; cwd = its folder, no PYTHONPATH.
-  const packaged = path.join(context.extensionPath, 'bin', 'codeapi-runtime',
-                             'codeapi-runtime.exe');
+  // PyInstaller must be built on this host OS; POSIX executables have no .exe suffix.
+  const runtimeName = process.platform === 'win32' ? 'codeapi-runtime.exe' : 'codeapi-runtime';
+  const packaged = path.join(context.extensionPath, 'bin', 'codeapi-runtime', runtimeName);
   // CODEAPI_FORCE_DEV_RUNTIME forces source mode even when the packaged exe
   // exists. Without it, packaged mode wins unconditionally whenever bin/
   // holds a build — and bin/ is gitignored, so an isolated Extension
@@ -878,7 +878,7 @@ function resolveRuntimeCommand(context, pyPort, adapterPort) {
            cwd: repoRoot, pythonPath };
 }
 
-// A REAL python.exe, never the Windows Store alias.
+// Find a real interpreter; on Windows avoid Store aliases.
 //
 // Bare 'python.exe' resolved to the App Execution Alias stub under
 // WindowsApps, which prints "Python was not found..." and exits 9009 without
@@ -887,6 +887,7 @@ function resolveRuntimeCommand(context, pyPort, adapterPort) {
 // zero-length reparse points, so a real interpreter is told apart by having
 // a non-empty file size, and WindowsApps is excluded by path regardless.
 function resolvePythonExe(fs) {
+  if (process.platform !== 'win32') { return 'python3'; }
   const dirs = String(process.env.PATH || '').split(path.delimiter);
   const names = ['python.exe', 'python3.exe'];
   for (const dir of dirs) {
