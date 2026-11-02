@@ -23,9 +23,9 @@ jobs:
       - name: Check root and adapter package metadata
         shell: node {0}
         run: |
-          const p = require('./package.json');
-          const lock = require('./package-lock.json');
-          const adapter = require('./extension-adapter/package.json');
+          const p = require(require('node:path').join(process.cwd(), 'package.json'));
+          const lock = require(require('node:path').join(process.cwd(), 'package-lock.json'));
+          const adapter = require(require('node:path').join(process.cwd(), 'extension-adapter/package.json'));
           if (p.version !== lock.version || p.version !== lock.packages[''].version) throw new Error('Version mismatch');
           if ([p.license, lock.packages[''].license, adapter.license].some(x => x !== 'MIT')) throw new Error('License mismatch');
       - name: Check JS adapter bridge behavior
