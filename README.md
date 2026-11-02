@@ -29,6 +29,7 @@ root package.json  (main = ./extension-adapter/extension.js)
                · public /term/*  → visible adapter-owned VS Code terminal
 ```
 
+- Public routes are trusted-local by default. Setting `CODEAPI_PUBLIC_TOKEN` enables `X-CODEAPI-TOKEN` authentication except for `/health` and `/session` (see [SECURITY.md](docs/SECURITY.md)).
 - The **JS adapter** owns the irreducible extension-host operations (`vscode.*`, `node-pty`,
   the internal token-guarded `/vscode/*` bridge).
 - The **Python runtime** owns the public HTTP service and byte-exact response shaping.
@@ -356,80 +357,26 @@ The equivalent raw-HTTP recipe (Windows and posix) is in
 
 ## Platform support (Windows / macOS / Linux)
 
-CODEAPI has been **built, run, and validated only on Windows 10 (10.0.19045)**.
-macOS and Linux are **architecturally supported but unvalidated** — the pieces that
-matter are OS-agnostic, and the terminal-defaults resolver already has a posix branch,
-but nobody has run the end-to-end flow on a Unix host yet.
+The full CODEAPI flow has been validated end-to-end **only on Windows 10
+(10.0.19045)**. macOS and Linux remain **unvalidated** targets.
 
-| Component | Windows 10/11 | macOS | Linux |
-|---|---|---|---|
-| Python runtime (stdlib HTTP, discovery, routing) | ✅ validated | ⚠️ expected, untested | ⚠️ expected, untested |
-| `node-pty` terminals | ✅ ConPTY | ⚠️ `forkpty`, untested | ⚠️ `forkpty`, untested |
-| Shell defaults (`resolveTermDefaults`) | ✅ `COMSPEC`→cmd | ✅ `$SHELL`/`/bin/bash` (code path exists) | ✅ same |
-| Loopback HTTP + bridge token + port allocator | ✅ | ✅ (OS-agnostic) | ✅ (OS-agnostic) |
-| Dev mode (`python -m codeapi_vscode.runtime`) | ✅ | ⚠️ needs `codeapi.pythonPath` | ⚠️ needs `codeapi.pythonPath` |
-| **Packaged runtime (PyInstaller exe) + VSIX** | ✅ | ❌ **not wired** (see gaps) | ❌ **not wired** |
+| Component | Windows | macOS/Linux |
+|---|---|---|
+| Packaged runtime | `codeapi-runtime.exe` (validated) | `codeapi-runtime` (launcher corrected, unvalidated) |
+| Development fallback | real `python.exe` (validated) | `python3` (launcher corrected, unvalidated) |
+| Terminal backend | node-pty ConPTY (validated) | node-pty native PTY (unvalidated) |
+| Host-native VSIX | validated on Windows 10 | unvalidated |
 
-### The two code gaps that make packaged mode Windows-only
+`python/tools/build_runtime.py` now prints the correct host-native
+executable name. PyInstaller cannot cross-compile: run `npm install` and
+`npm run vscode:prepublish` on each target platform and package a matching
+native node-pty binary. macOS/Linux development mode uses `python3` from
+PATH (or an explicit `codeapi.pythonPath` / `CODEAPI_PYTHON`).
 
-Both are hardcoded literals in `extension-adapter/extension.js` →
-`resolveRuntimeCommand()`:
-
-1. **Packaged-mode probe looks for `codeapi-runtime.exe`.** On macOS/Linux PyInstaller
-   emits `codeapi-runtime` (no `.exe`), so the probe never matches and the adapter falls
-   through to dev mode. → On posix, do not rely on the packaged exe; run dev mode.
-2. **Dev-mode default interpreter is `python.exe`.** There is no `python.exe` on posix,
-   so the spawn fails with `ENOENT`. → **Set `codeapi.pythonPath` (or the `CODEAPI_PYTHON`
-   env var) to a real `python3`** before launching the extension.
-
-`python/tools/build_runtime.py` is likewise "Windows-first": the PyInstaller build runs
-fine on posix (it is not a cross-compiler — you must build on each target OS), only its
-printed output name assumes `.exe`.
-
-### Running on macOS / Linux **today** (dev mode)
-
-```bash
-# 1. Build/load node-pty for your Node (needs Xcode Command Line Tools on macOS, or
-#    build-essential + python3 on Linux, unless a prebuilt N-API binary is fetched).
-npm install
-
-# 2. Point the extension at a real interpreter — in the dev host's settings.json:
-#    "codeapi.pythonPath": "/usr/bin/python3"        (or your venv/pyenv python3)
-#    …or export CODEAPI_PYTHON=/usr/bin/python3 before launching VS Code.
-
-# 3. F5 → Run Extension   (dev mode: python3 -m codeapi_vscode.runtime)
-
-# 4. Verify + create a terminal with an explicit posix shell:
-curl -s http://127.0.0.1:47337/health
-curl -sX POST http://127.0.0.1:47337/term/create -H 'Content-Type: application/json' \
-     -d '{"shell":"/bin/bash","show":true}'
-```
-
-Everything after that (write / read / list / delete) is identical to the Windows flow
-above — the routes and shapes are OS-independent.
-
-### To close the gap for packaged, installable cross-platform distribution
-
-Small, well-scoped changes:
-
-- **Generalize the two literals** in `resolveRuntimeCommand()`:
-  `const exeName = process.platform === 'win32' ? 'codeapi-runtime.exe' : 'codeapi-runtime';`
-  and default the dev interpreter to `python3` on posix
-  (`process.platform === 'win32' ? 'python.exe' : 'python3'`).
-- **Build a runtime per target OS** (PyInstaller does not cross-compile): produce
-  `bin/codeapi-runtime/codeapi-runtime` on posix; `build_runtime.py` already does this —
-  only its printed filename needs to drop `.exe` off-Windows.
-- **Ship platform-specific VSIXs** with `vsce package --target darwin-x64|darwin-arm64|linux-x64|win32-x64`, each carrying the matching `node-pty` prebuild + runtime binary.
-- **Validate**: run [OPERATIONAL_GUIDE.md](docs/OPERATIONAL_GUIDE.md) end-to-end on each OS.
-
-### What actually gets *easier* on macOS/Linux
-
-The Windows-specific hazards documented in [TERMINAL_ON_WINDOWS.md](docs/TERMINAL_ON_WINDOWS.md)
-largely disappear off-Windows: no `COMSPEC`/cmd-vs-PowerShell quoting split (you get
-`$SHELL` or `/bin/bash`), no Windows Store `python` alias trap (exit 9009), no reserved
-/excluded-port-range surprises, and no image-file lock blocking a rebuild while the
-runtime is running. The read buffer is still raw VT, but from a native PTY rather than
-ConPTY, so it tends to be cleaner.
+Before claiming full support, validate extension activation, identity
+discovery, `/exec`, PTY create/write/read/liveness/delete, packaged file
+inventory and installed-VSIX native binary loading on each host.
+See [INSTALL_AND_BUILD.md](docs/INSTALL_AND_BUILD.md).
 
 ---
 

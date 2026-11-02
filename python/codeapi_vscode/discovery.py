@@ -23,6 +23,7 @@ python/tests/test_discovery.py.
 """
 
 import json
+import os
 import time
 import urllib.error
 import urllib.request
@@ -166,6 +167,9 @@ def _request(method, url, body=None, timeout=DISCOVERY_TIMEOUT):
     """Return (status_or_None, parsed_body). status is None if unreachable."""
     data = None
     headers = {}
+    public_token = os.environ.get("CODEAPI_PUBLIC_TOKEN")
+    if public_token:
+        headers["X-CODEAPI-TOKEN"] = public_token
     if body is not None:
         data = json.dumps(body).encode("utf-8")
         headers["Content-Type"] = "application/json"

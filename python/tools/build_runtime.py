@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 """build_runtime.py — package the Python runtime into a standalone executable.
 
-Phase-14 pre-work (design). First target: Windows, PyInstaller **onedir** (easier
-to inspect/debug than onefile; onefile is an optional later mode once startup +
-extraction behavior is understood).
+PyInstaller **onedir** builds a host-native binary, not a cross-compiled one.
 
 No magic: by default this only PRINTS the exact PyInstaller command
 (`--dry-run`). Pass `--run` to actually build (requires `pip install pyinstaller`).
@@ -12,10 +10,11 @@ No magic: by default this only PRINTS the exact PyInstaller command
     python python/tools/build_runtime.py --run      # actually build
 
 Expected output:
-    bin/codeapi-runtime/codeapi-runtime.exe   (onedir: a folder with the exe + deps)
+    Windows: bin/codeapi-runtime/codeapi-runtime.exe
+    macOS/Linux: bin/codeapi-runtime/codeapi-runtime
 
-The JS adapter (extension-adapter/extension.js) launches this exe in packaged
-mode, or `python.exe -m codeapi_vscode.runtime` in dev mode.
+The JS adapter launches the native binary when packaged, or the host's Python
+interpreter in dev mode.
 """
 
 import os
@@ -35,7 +34,7 @@ NAME = "codeapi-runtime"
 
 
 def build_command():
-    """The exact PyInstaller invocation (onedir, Windows-first)."""
+    """The exact PyInstaller invocation (onedir, current host)."""
     return [
         sys.executable, "-m", "PyInstaller",
         "--name", NAME,
@@ -58,7 +57,8 @@ def main(argv=None):
     cmd = build_command()
     print("PyInstaller command:\n  " + " ".join(cmd))
     print(f"\nEntry:  {ENTRY}")
-    print(f"Output: {os.path.join(DIST, NAME, NAME + '.exe')}")
+    suffix = ".exe" if os.name == "nt" else ""
+    print(f"Output: {os.path.join(DIST, NAME, NAME + suffix)}")
     if not run:
         print("\n(dry run — pass --run to build; requires: pip install pyinstaller)")
         return 0

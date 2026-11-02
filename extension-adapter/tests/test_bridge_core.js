@@ -261,6 +261,15 @@ async function main() {
   check('ports: full band (65th runtime) rejects visibly, no out-of-band bind',
         exhausted !== null && /exhausted/.test(exhausted) && /47337-47400/.test(exhausted));
 
+  // Native runtime filename and default interpreter selection on all hosts.
+  check('windows: executable and Python naming', core.runtimeExecutableName('win32') === 'codeapi-runtime.exe'
+    && core.defaultPythonName('win32') === 'python.exe');
+  for (const platform of ['linux', 'darwin']) {
+    check(platform + ': executable and Python naming',
+      core.runtimeExecutableName(platform) === 'codeapi-runtime'
+      && core.defaultPythonName(platform) === 'python3');
+  }
+
   // --- identity-aware readiness (the probe->spawn race, Outcome B) -----------
   // "Ready" must mean THE RUNTIME THIS ADAPTER LAUNCHED answers — a 200 from a
   // different runtime that grabbed the port between the JS probe and the Python

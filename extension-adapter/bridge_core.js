@@ -751,6 +751,15 @@ function makeCodeApiTerm(terms, termCreate) {
   };
 }
 
+// Host-native Python runtime lookup, pure so it can be tested on every OS.
+function runtimeExecutableName(platform) {
+  return platform === 'win32' ? 'codeapi-runtime.exe' : 'codeapi-runtime';
+}
+
+function defaultPythonName(platform) {
+  return platform === 'win32' ? 'python.exe' : 'python3';
+}
+
 // --- port allocation (bounded) ----------------------------------------------
 //
 // The Python service is allocated ONLY inside the reserved adapter band
@@ -802,4 +811,5 @@ module.exports = {
   NOT_SUBMITTED,
   SHELL_UNKNOWN, SHELL_READY, SHELL_BUSY, SHELL_RETURNING, SHELL_EXITED,
   pickFreePort, PORT_BAND_BASE, PORT_BAND_LIMIT, sessionMatches,
+  runtimeExecutableName, defaultPythonName,
 };
