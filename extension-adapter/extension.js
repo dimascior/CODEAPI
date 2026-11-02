@@ -848,7 +848,7 @@ function resolveRuntimeCommand(context, pyPort, adapterPort) {
                       '--adapter-port', String(adapterPort)];
   const fs = require('fs');
   // PyInstaller must be built on this host OS; POSIX executables have no .exe suffix.
-  const runtimeName = process.platform === 'win32' ? 'codeapi-runtime.exe' : 'codeapi-runtime';
+  const runtimeName = bridgeCore.runtimeExecutableName(process.platform);
   const packaged = path.join(context.extensionPath, 'bin', 'codeapi-runtime', runtimeName);
   // CODEAPI_FORCE_DEV_RUNTIME forces source mode even when the packaged exe
   // exists. Without it, packaged mode wins unconditionally whenever bin/
@@ -887,7 +887,7 @@ function resolveRuntimeCommand(context, pyPort, adapterPort) {
 // zero-length reparse points, so a real interpreter is told apart by having
 // a non-empty file size, and WindowsApps is excluded by path regardless.
 function resolvePythonExe(fs) {
-  if (process.platform !== 'win32') { return 'python3'; }
+  if (process.platform !== 'win32') { return bridgeCore.defaultPythonName(process.platform); }
   const dirs = String(process.env.PATH || '').split(path.delimiter);
   const names = ['python.exe', 'python3.exe'];
   for (const dir of dirs) {
