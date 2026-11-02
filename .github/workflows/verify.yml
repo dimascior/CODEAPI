@@ -1,0 +1,38 @@
+name: CODEAPI verification
+
+on:
+  push:
+    branches: [main, fix/review-findings-20261102]
+  pull_request:
+
+jobs:
+  smoke:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Check root and adapter package metadata
+        shell: node {0}
+        run: |
+          const p = require('./package.json');
+          const lock = require('./package-lock.json');
+          const adapter = require('./extension-adapter/package.json');
+          if (p.version !== lock.version || p.version !== lock.packages[''].version) throw new Error('Version mismatch');
+          if ([p.license, lock.packages[''].license, adapter.license].some(x => x !== 'MIT')) throw new Error('License mismatch');
+      - name: Check JS adapter bridge behavior
+        run: node extension-adapter/tests/test_bridge_core.js
+      - name: Check opt-in HTTP authentication
+        run: python python/tests/test_public_auth.py
+      - name: Check runtime routes
+        run: python python/tests/test_runtime_pure.py
+      - name: Check runtime bootstrap
+        run: python python/tests/test_runtime_cli.py
