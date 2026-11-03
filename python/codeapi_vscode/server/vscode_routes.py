@@ -38,7 +38,7 @@ def _present(value):
     return None if value is UNDEFINED else value
 
 
-def register(router, adapter):
+def register(router, adapter, *, restricted=True):
     def _guarded(call):
         try:
             return call()
@@ -86,8 +86,19 @@ def register(router, adapter):
     def apis_handler(req):
         return _guarded(lambda: (200, _present(adapter.apis())))
 
-    router.register("POST", "/exec", exec_handler)
-    router.register_param("POST", "/command/:commandId", command_handler)
+    # ── Route restriction (Step 2) ──
+    # /exec runs arbitrary JS with child_process available; /command runs any
+    # VS Code command.  Both are disabled by default.  Set
+    # CODEAPI_SECURITY_POLICY=open to re-enable (e.g. legacy tooling).
+    if restricted:
+        def _blocked(req):
+            return (403, {"error": "route disabled by security policy"})
+        router.register("POST", "/exec", _blocked)
+        router.register_param("POST", "/command/:commandId", _blocked)
+    else:
+        router.register("POST", "/exec", exec_handler)
+        router.register_param("POST", "/command/:commandId", command_handler)
+
     router.register("GET", "/workspace/folders", workspace_folders_handler)
     router.register("GET", "/editor/active", editor_active_handler)
     router.register("POST", "/window/showMessage", show_message_handler)

@@ -100,7 +100,8 @@ def _wait(base):
 def main():
     results = []
     port = PortAllocator().resolve(None)
-    server, _ = create_server("127.0.0.1", port, adapter=FakeAdapter())
+    server, _ = create_server("127.0.0.1", port, adapter=FakeAdapter(),
+                               restricted=True, gate_root="")
     threading.Thread(target=server.start, daemon=True).start()
     base = f"http://127.0.0.1:{port}"
     _wait(base)
@@ -185,6 +186,39 @@ def main():
               st == 503 and json.loads(body) == {"error": "vscode adapter not available"})
     finally:
         server2.stop()
+
+    # ── Restriction tests (restricted=True) ──
+    # The main server above is already restricted; reuse it (port still live?
+    # No — it was stopped.) Spin up a fresh one.
+    port3 = PortAllocator().resolve(None)
+    server3, _ = create_server("127.0.0.1", port3, adapter=FakeAdapter(),
+                               restricted=True, gate_root="")
+    threading.Thread(target=server3.start, daemon=True).start()
+    base3 = f"http://127.0.0.1:{port3}"
+    _wait(base3)
+    try:
+        # Unsupported shell → 403
+        st, body = _raw(base3, "POST", "/term/create",
+                        {"shell": "cmd.exe", "cwd": "C:/"})
+        check(results, "restricted create with cmd.exe -> 403",
+              st == 403 and b"unsupported shell" in body)
+
+        # Custom args → 403
+        st, body = _raw(base3, "POST", "/term/create",
+                        {"args": ["-NoProfile"], "cwd": "C:/"})
+        check(results, "restricted create with args -> 403",
+              st == 403 and b"arguments" in body)
+
+        # Supported shell → 200
+        st, body = _raw(base3, "POST", "/term/create",
+                        {"shell": "powershell.exe", "cwd": "C:/"})
+        check(results, "restricted create with powershell.exe -> 200", st == 200)
+
+        # No shell (platform default) → 200
+        st, body = _raw(base3, "POST", "/term/create", {"cwd": "C:/"})
+        check(results, "restricted create no shell -> 200", st == 200)
+    finally:
+        server3.stop()
 
     passed = sum(1 for _, ok in results if ok)
     total = len(results)

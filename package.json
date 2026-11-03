@@ -3,7 +3,7 @@
   "displayName": "CODEAPI",
   "description": "Local VS Code automation over HTTP with extension-host execution and controllable PTY terminals.",
   "publisher": "dimas",
-  "version": "0.1.7",
+  "version": "0.1.9",
   "private": true,
   "engines": {
     "vscode": "^1.102.0"
@@ -33,6 +33,19 @@
           "type": "string",
           "default": "",
           "description": "Explicit interpreter for dev mode. Empty = bundled runtime if present, otherwise python.exe on Windows or python3 on macOS/Linux."
+        },
+        "codeapi.securityPolicy": {
+          "type": "string",
+          "enum": ["restricted", "open"],
+          "default": "restricted",
+          "scope": "machine",
+          "description": "Security policy for the runtime. 'restricted' disables /exec, /command, and custom shell/args on /term/create. 'open' re-enables them for legacy tooling. Machine scope: cannot be overridden by workspace settings."
+        },
+        "codeapi.gateRoot": {
+          "type": "string",
+          "default": "",
+          "scope": "machine",
+          "description": "Path to the .command-gate directory for write-gate verification. Empty disables gate checking. Machine scope: cannot be overridden by workspace settings."
         }
       }
     }

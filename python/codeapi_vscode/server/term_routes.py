@@ -17,6 +17,7 @@ adapter.py just to carry an HTTP status).
 """
 
 import json as _json
+import os
 import re
 
 from ..vscode.adapter import AdapterError, AdapterUnavailable
@@ -152,7 +153,7 @@ def _boolean(body, name, default):
     )
 
 
-def register(router, adapter):
+def register(router, adapter, *, restricted=True, gate_root=""):
     def _guarded(call):
         try:
             return call()
@@ -170,10 +171,28 @@ def register(router, adapter):
 
     def create_handler(req):
         b = _json_body(req)
+        if restricted:
+            if b.get("args"):
+                return (403, {"error": "custom terminal arguments are not allowed"})
+            shell = b.get("shell")
+            if shell is not None:
+                from ..admission import dialect_for_shell, is_supported_dialect
+                dialect = dialect_for_shell(shell)
+                if not is_supported_dialect(dialect):
+                    return (403, {
+                        "error": "unsupported shell: {!r}".format(shell)})
+            args = None
+        else:
+            shell = b.get("shell")
+            args = b.get("args")
         return _guarded(lambda: (200, adapter.term_create(
-            id=b.get("id"), cwd=b.get("cwd"), shell=b.get("shell"),
-            args=b.get("args"), cols=b.get("cols"), rows=b.get("rows"),
+            id=b.get("id"), cwd=b.get("cwd"), shell=shell,
+            args=args, cols=b.get("cols"), rows=b.get("rows"),
             max_bytes=b.get("maxBytes"), show=b.get("show"))))
+
+    # ── Step 3: gate verification for writes ──
+    # Resolve the inflight directory once at registration time.
+    _inflight_dir = os.path.join(gate_root, "inflight") if gate_root else ""
 
     def write_handler(req):
         tid = req.params.get("id")
@@ -183,6 +202,13 @@ def register(router, adapter):
             enter = _boolean(b, "enter", ENTER_DEFAULT)
         except _FieldError as e:
             return (400, {"error": str(e)})
+
+        if _inflight_dir:
+            from .gate_guard import verify_write_gate
+            admitted, detail = verify_write_gate(_inflight_dir, tid, data, enter)
+            if not admitted:
+                return (403, {"error": detail})
+
         # returns {id,wrote}; `wrote` is created ONLY by the extension as
         # Buffer.byteLength of the final string INCLUDING any appended CR
         # (extension-adapter/extension.js termWrite). Python propagates it
@@ -192,10 +218,6 @@ def register(router, adapter):
             tid, data, enter=enter)))
 
     def submit_handler(req):
-        # Starting a shell command is NOT the same operation as sending raw
-        # input, and they are deliberately different routes. This one is
-        # gated on readiness, generation and exclusive ownership; /write
-        # stays ungated so a caller can still answer a pager or a REPL.
         tid = req.params.get("id")
         try:
             b = _object_body(req)
@@ -204,6 +226,28 @@ def register(router, adapter):
             expected_generation = _string(b, "expectedGeneration")
         except _FieldError as e:
             return (400, {"error": str(e)})
+
+        command = b.get("command")
+        dialect = b.get("dialect")
+
+        if command is not None and dialect is not None:
+            from ..admission import build_envelope
+            expected_data = build_envelope(command, execution_id, shell=dialect)
+            if expected_data != data:
+                return (400, {
+                    "error": "envelope verification failed: "
+                             "rebuilt envelope does not match submitted data"})
+
+        if _inflight_dir:
+            if command is None:
+                return (403, {
+                    "error": "command field is required when gate "
+                             "verification is enabled"})
+            from .gate_guard import verify_submit_gate
+            admitted, detail = verify_submit_gate(_inflight_dir, tid, command)
+            if not admitted:
+                return (403, {"error": detail})
+
         return _guarded(lambda: (200, adapter.term_submit(
             tid, execution_id=execution_id, data=data,
             expected_generation=expected_generation)))

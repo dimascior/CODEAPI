@@ -140,6 +140,9 @@ async function launchAttempt(context, pyPort, codeapiWorkspaceId) {
   // not a CODEAPI-owned uniqueness guarantee); extensionHostPid is THIS extension-host
   // pid (differs from the Python runtime pid).
   // CODEAPI_WINDOW_ID carries the workspace id for backward compatibility.
+  const cfg = vscode.workspace.getConfiguration('codeapi');
+  const securityPolicy = cfg.get('securityPolicy', 'restricted');
+  const gateRoot = cfg.get('gateRoot', '');
   const env = {
     ...process.env,
     CODEAPI_PY_PORT: String(pyPort),
@@ -152,6 +155,8 @@ async function launchAttempt(context, pyPort, codeapiWorkspaceId) {
     CODEAPI_WINDOW_ID: codeapiWorkspaceId,
     CODEAPI_WORKSPACE_ID: codeapiWorkspaceId,
     CODEAPI_RUNTIME_ID: runtimeId,
+    CODEAPI_SECURITY_POLICY: securityPolicy,
+    CODEAPI_GATE_ROOT: gateRoot,
   };
   // Dev mode: make codeapi_vscode importable (the package lives in <repo>/python).
   // Packaged mode leaves pythonPath null (the exe is self-contained).

@@ -32,7 +32,28 @@ NO_BODY = _NoBody()
 class _Handler(BaseHTTPRequestHandler):
     server_version = "codeapi-runtime/0"
 
+    def _reject(self, status, message):
+        """Send a JSON error response without dispatching to the router."""
+        data = json.dumps({"error": message}, separators=(",", ":")).encode("utf-8")
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
+
     def _handle(self, method):
+        # ── Browser origin guard (Step 1) ──
+        # Browsers add an Origin header on cross-origin requests AND on
+        # same-origin POST/PUT/DELETE.  Legitimate callers (CLI tools,
+        # Invoke-RestMethod, Node http.request) never set it.  A page
+        # visited while VS Code is open could otherwise reach /exec with
+        # a simple POST (no preflight required for text/plain).
+        if self.headers.get("Origin") is not None:
+            return self._reject(403, "browser requests are not accepted")
+        host_header = (self.headers.get("Host") or "").split(":")[0]
+        if host_header and host_header not in ("127.0.0.1", "localhost", "::1", "[::1]"):
+            return self._reject(403, "non-loopback host rejected")
+
         # Opt-in public-service authentication, distinct from the mandatory
         # private bridge token. Keep health/session available for discovery.
         token = getattr(self.server, "public_token", "")
@@ -40,13 +61,8 @@ class _Handler(BaseHTTPRequestHandler):
         if token and not discovery:
             supplied = self.headers.get("X-CODEAPI-TOKEN", "")
             if not secrets.compare_digest(supplied.encode("utf-8"), token.encode("utf-8")):
-                data = b'{"error":"CODEAPI authentication required"}'
-                self.send_response(401)
-                self.send_header("Content-Type", "application/json")
-                self.send_header("Content-Length", str(len(data)))
-                self.end_headers()
-                self.wfile.write(data)
-                return
+                return self._reject(401, "CODEAPI authentication required")
+
         length = int(self.headers.get("Content-Length") or 0)
         body = self.rfile.read(length) if length else b""
         try:

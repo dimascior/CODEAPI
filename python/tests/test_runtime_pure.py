@@ -175,8 +175,6 @@ def main():
         # 503 when no adapter is available; terminal routes remain 404. Hit each with
         # its real method so it reaches the handler (not a method-mismatch 404).
         adapter_backed = [
-            ("POST", "/exec", "return 1"),
-            ("POST", "/command/foo", {"args": []}),
             ("GET", "/workspace/folders", None),
             ("GET", "/editor/active", None),
             ("POST", "/window/showMessage", {"message": "x", "type": "info"}),
@@ -187,6 +185,18 @@ def main():
             check(results, f"adapter-backed {method} {route} -> 503",
                   st == 503 and isinstance(p, dict)
                   and p.get("error") == "vscode adapter not available")
+
+        # The default restricted policy refuses /exec and /command before any adapter
+        # check. test_vscode_routes.py covers them with restricted=False.
+        restricted_routes = [
+            ("POST", "/exec", "return 1"),
+            ("POST", "/command/foo", {"args": []}),
+        ]
+        for method, route, rbody in restricted_routes:
+            st, p = _req(base, method, route, rbody)
+            check(results, f"restricted {method} {route} -> 403",
+                  st == 403 and isinstance(p, dict)
+                  and p.get("error") == "route disabled by security policy")
 
         # terminal routes are SERVED as of Phase 13D: 503 when no adapter is
         # configured (NOT 404). Hit each with its real method so it reaches the

@@ -75,9 +75,11 @@ external client
    > **Failure:** missing or wrong token → `403 {"error":"forbidden"}`.
 
    Env passed adapter → Python: `CODEAPI_BRIDGE_TOKEN`, alongside `CODEAPI_PY_PORT`,
-   `CODEAPI_EXTENSION_PORT`, `CODEAPI_WORKSPACE_URI`, `CODEAPI_EXTENSION_PATH`, and the
-   identity vars `CODEAPI_VSCODE_SESSION_ID` / `CODEAPI_EXTENSION_HOST_PID` /
-   `CODEAPI_WINDOW_ID`.
+   `CODEAPI_EXTENSION_PORT`, `CODEAPI_WORKSPACE_URI`, `CODEAPI_EXTENSION_PATH`,
+   `CODEAPI_SECURITY_POLICY` (default `"restricted"`; `"open"` to re-enable `/exec` and
+   `/command`), `CODEAPI_GATE_ROOT` (path to `.command-gate` directory; empty disables
+   write-gate verification), and the identity vars `CODEAPI_VSCODE_SESSION_ID` /
+   `CODEAPI_EXTENSION_HOST_PID` / `CODEAPI_WINDOW_ID`.
 
 ---
 

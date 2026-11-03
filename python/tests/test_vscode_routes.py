@@ -86,7 +86,8 @@ def check(results, label, cond):
 def main():
     results = []
     port = PortAllocator().resolve(None)
-    server, _sm = create_server("127.0.0.1", port, adapter=FakeAdapter())
+    server, _sm = create_server("127.0.0.1", port, adapter=FakeAdapter(),
+                                restricted=False, gate_root="")
     threading.Thread(target=server.start, daemon=True).start()
     base = f"http://127.0.0.1:{port}"
 
@@ -153,6 +154,36 @@ def main():
         check(results, "/health still ok", st == 200 and b'"status":"ok"' in body)
     finally:
         server.stop()
+
+    # ── Restricted-mode server: /exec and /command must return 403 ──
+    port2 = PortAllocator().resolve(None)
+    server2, _ = create_server("127.0.0.1", port2, adapter=FakeAdapter(),
+                               restricted=True, gate_root="")
+    threading.Thread(target=server2.start, daemon=True).start()
+    base2 = f"http://127.0.0.1:{port2}"
+    for _ in range(40):
+        try:
+            with urllib.request.urlopen(base2 + "/health", timeout=5) as r:
+                if r.status == 200:
+                    break
+        except Exception:  # noqa: BLE001
+            pass
+        time.sleep(0.1)
+
+    try:
+        st, n, body = _raw(base2, "POST", "/exec", "value", "text/plain")
+        check(results, "restricted /exec -> 403",
+              st == 403 and b"security policy" in body)
+        st, n, body = _raw(base2, "POST", "/command/do.thing", {"args": []})
+        check(results, "restricted /command -> 403",
+              st == 403 and b"security policy" in body)
+
+        st, n, body = _raw(base2, "GET", "/workspace/folders")
+        check(results, "restricted /workspace/folders still ok", st == 200)
+        st, n, body = _raw(base2, "GET", "/health")
+        check(results, "restricted /health still ok", st == 200)
+    finally:
+        server2.stop()
 
     passed = sum(1 for _, ok in results if ok)
     total = len(results)

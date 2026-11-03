@@ -55,6 +55,7 @@ the Python service never spawns a PTY.
 | `GET /term/list` | `GET /vscode/term/list` | — | `[ { "id":"t…", "pid":N, "bytes":N, "alive":bool, "exitCode":N\|null, "surface":"process"\|"vscode-terminal" } ]` |
 | `POST /term/create` | `POST /vscode/term/create` | `{ id?, cwd?, shell?, args?, cols?, rows?, maxBytes?, show? }` | `{ "id":"t…", "shell":"…", "cwd":"…", "pid":N, "surface":"process"\|"vscode-terminal" }` |
 | `POST /term/:id/write` | `POST /vscode/term/:id/write` | `{ data, enter? }` | `{ "id":"t…", "wrote":N }` |
+| `POST /term/:id/submit` | `POST /vscode/term/:id/submit` | `{ executionId, data, expectedGeneration, command?, dialect? }` | `{ "id":"t…", "executionId":"…", "wrote":N }` |
 | `GET /term/:id/read` | `GET /vscode/term/:id/read` | `?tail=N&clear=bool` | `{ "id":"t…", "bytes":N, "buffer":"<raw ANSI>" }` |
 | `POST /term/:id/resize` | `POST /vscode/term/:id/resize` | `{ cols, rows }` | `{ "id":"t…", "cols":N, "rows":N }` |
 | `DELETE /term/:id` | `DELETE /vscode/term/:id` | — | `{ "id":"t…", "killed":bool }` |
@@ -91,6 +92,14 @@ Unknown `:id` → `404 {"error":"Terminal <id> not found"}`. No adapter configur
   `alive:true` on `/term/list`; a `surface:"process"` record can never support that claim.
 - **`POST /term/:id/write`** — write `data` (optionally append Enter). Returns `{wrote:N}`
   = **bytes accepted, not command success and not proof of life** (§1).
+- **`POST /term/:id/submit`** — submit a shell command. `data` is the full envelope
+  (produced by `build_envelope`); `executionId` and `expectedGeneration` gate the
+  submission on readiness and exclusive ownership.  When `command` and `dialect` are
+  provided, the route rebuilds the envelope server-side and refuses if the rebuilt form
+  differs from the submitted `data` — this proves the caller knows the raw command, not
+  just the envelope bytes.  When write-gate verification is enabled, `command` is
+  required and the gate is checked against `submit_command_sha256` (SHA-256 of the raw
+  command) and `terminal_id`.
 - **`GET /term/:id/read`** — return the retained **raw ANSI/VT** buffer; the client
   strips. `tail=N` returns the last N bytes; `clear=true` empties the captured buffer
   after reading. **Caveat:** `clear` also erases any exit marker, which is exactly why
@@ -166,3 +175,22 @@ in the operational runs:
 
 `write` to a dead PTY (between 3 and 4) returns `{wrote:N}` and must not masquerade as
 success or proof of life.
+
+---
+
+## 8. Security policy
+
+See [SECURITY.md](SECURITY.md) for the full model.  The terminal-specific controls:
+
+- **Shell validation** (restricted mode): `POST /term/create` with a `shell` parameter
+  validates it against `dialect_for_shell`.  An unsupported dialect → `403`.  Custom `args`
+  → `403`.  No `shell` (platform default) is allowed.
+- **Write-gate verification** (`CODEAPI_GATE_ROOT` set): `POST /term/:id/write` and
+  `POST /term/:id/submit` check the inflight directory for an admitted gate that matches the
+  payload hash, terminal ID, enter flag (write only), and expiry.  Each gate is consumed on
+  match — one gate, one write.  The guard fails closed: missing directory, unreadable
+  directory, or no match all return `403`.
+- **Envelope verification** (`/submit` with `command` + `dialect`): the route rebuilds
+  `build_envelope(command, executionId, shell=dialect)` and refuses if it differs from the
+  submitted `data`.  This is independent of the gate check and runs even when gate
+  verification is off.

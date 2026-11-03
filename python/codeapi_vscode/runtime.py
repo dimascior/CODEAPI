@@ -73,14 +73,19 @@ def parse_config(argv=None):
     return args
 
 
-def create_server(host, port, adapter=None):
+def create_server(host, port, adapter=None, *, restricted=True, gate_root=""):
     """Build the service bound to (host, port). Returns (HttpServer,
     SessionManager). Does NOT start serving — the caller does.
 
     `adapter` is the VsCodeAdapter used by the adapter-backed routes. When
     None it is built from the environment (CODEAPI_EXTENSION_PORT /
     CODEAPI_BRIDGE_TOKEN); an unconfigured adapter makes those routes answer 503
-    (the pure routes are unaffected)."""
+    (the pure routes are unaffected).
+
+    *restricted* disables /exec, /command, and shell/args on /term/create.
+    *gate_root* enables write-gate verification when set to the .command-gate
+    directory path.
+    """
     from .server.api_registry import register_all
     from .server.dynamic_endpoint_routes import DynamicRegistry
     from .server.http_server import HttpServer
@@ -98,7 +103,8 @@ def create_server(host, port, adapter=None):
 
     router = Router()
     register_all(router, session_manager=session_manager,
-                 dynamic_registry=dynamic_registry, adapter=adapter)
+                 dynamic_registry=dynamic_registry, adapter=adapter,
+                 restricted=restricted, gate_root=gate_root)
     return HttpServer(host=host, port=port, router=router), session_manager
 
 
@@ -125,9 +131,16 @@ def main(argv=None):
     # routes answer 503 while the pure routes still serve (standalone mode).
     adapter = VsCodeAdapter(port=cfg.adapter_port,
                             token=os.environ.get("CODEAPI_BRIDGE_TOKEN"))
-    server, session_manager = create_server(cfg.host, port, adapter=adapter)
+    restricted = os.environ.get("CODEAPI_SECURITY_POLICY", "restricted") != "open"
+    gate_root = os.environ.get("CODEAPI_GATE_ROOT", "")
+    server, session_manager = create_server(cfg.host, port, adapter=adapter,
+                                            restricted=restricted,
+                                            gate_root=gate_root)
+    policy_label = "restricted" if restricted else "open"
+    gate_label = gate_root if gate_root else "none"
     print(f"codeapi runtime listening on http://{cfg.host}:{port} "
-          f"(session {session_manager.id})", flush=True)
+          f"(session {session_manager.id}, policy={policy_label}, "
+          f"gate_root={gate_label})", flush=True)
     try:
         server.start()
     except OSError as e:
